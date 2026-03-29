@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { KNOWLEDGE_BASE } from '@/lib/mockData';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const search = searchParams.get('q') || '';
-  const items = await query(
-    `SELECT * FROM knowledge_base WHERE (title ILIKE $1 OR content ILIKE $1) ORDER BY created_at DESC`,
-    [`%${search}%`]
-  );
+  const search = (searchParams.get('q') || '').toLowerCase();
+  const items = search
+    ? KNOWLEDGE_BASE.filter(
+        k => k.title.toLowerCase().includes(search) || k.content.toLowerCase().includes(search)
+      )
+    : KNOWLEDGE_BASE;
   return NextResponse.json(items);
 }
