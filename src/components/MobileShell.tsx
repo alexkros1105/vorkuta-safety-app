@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 
 const navItems = [
   {
-    href: '/',
+    href: '/app',
     label: 'Главная',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,10 +59,16 @@ const navItems = [
 export default function MobileShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('app-theme');
     if (saved === 'light') setTheme('light');
+
+    const check = () => setIsMobile(window.innerWidth <= 500);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const toggleTheme = () => {
@@ -72,9 +78,39 @@ export default function MobileShell({ children }: { children: React.ReactNode })
   };
 
   const getActive = (href: string) => {
-    if (href === '/') return pathname === '/';
+    if (href === '/app') return pathname === '/app';
     return pathname.startsWith(href);
   };
+
+  const navBar = (
+    <nav className="bottom-nav">
+      {navItems.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={`nav-item ${getActive(item.href) ? 'active' : ''}`}
+        >
+          {item.icon}
+          {item.badge && !getActive(item.href) && (
+            <span className="nav-badge">{item.badge}</span>
+          )}
+          <span className="nav-label">{item.label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
+
+  // На реальном мобильном — без рамки телефона
+  if (isMobile) {
+    return (
+      <div className={`phone-frame${theme === 'light' ? ' light' : ''}`} style={{
+        width: '100%', minHeight: '100dvh', borderRadius: 0, border: 'none', boxShadow: 'none',
+      }}>
+        <div className="screen">{children}</div>
+        {navBar}
+      </div>
+    );
+  }
 
   return (
     <div className="phone-outer">
@@ -116,27 +152,8 @@ export default function MobileShell({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        {/* Screen content */}
-        <div className="screen">
-          {children}
-        </div>
-
-        {/* Bottom navigation */}
-        <nav className="bottom-nav">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`nav-item ${getActive(item.href) ? 'active' : ''}`}
-            >
-              {item.icon}
-              {item.badge && !getActive(item.href) && (
-                <span className="nav-badge">{item.badge}</span>
-              )}
-              <span className="nav-label">{item.label}</span>
-            </Link>
-          ))}
-        </nav>
+        <div className="screen">{children}</div>
+        {navBar}
       </div>
     </div>
   );
